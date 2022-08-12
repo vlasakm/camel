@@ -50,7 +50,7 @@ match {
     "var" => VAR,
 
     r"[_A-Za-z][_A-Za-z0-9]*" => IDENTIFIER,
-    r"[-]?[0-9]+" => NUMBER,
+    r"[0-9]+" => NUMBER,
     // TODO FLOATS
     r#""([^\\"]|\\[~ntr\\"])*""# => STRING_LITERAL,
 }
@@ -93,9 +93,9 @@ LeftAssoc<Op, NextLevel>: Expr = {
     NextLevel,
 }
 
-AExpr: Expr = {
-    <left:AExpr> <op:ExprOp> <right:Factor> => Expr::Operator{op: op, arguments: vec![left, right]},
-    Factor,
+Unary<Op, NextLevel>: Expr = {
+    <op: Op> <arg: Unary<Op, NextLevel>> => Expr::Operator{ op, arguments: vec![arg] },
+    NextLevel,
 }
 
 Expr = LeftAssoc<LogicalOp, AExpr>;
@@ -122,7 +122,11 @@ TermOp: Opcode = {
     DIVIDE => Opcode::Div,
 }
 
-Term = Primary;
+Term = Unary<UnaryOp, Primary>;
+
+UnaryOp: Opcode = {
+    MINUS => Opcode::Negate,
+}
 
 Primary: Expr = {
     TRUE => Expr::Bool(true),
